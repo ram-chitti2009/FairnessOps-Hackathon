@@ -1,5 +1,0 @@
-scenario,run_id,overall_status,max_auc_gap,red_attr_count,n_top_alerts,output_dir
-baseline,sdk_baseline_c48447fd01,RED,0.282273,2,4,C:\Users\venka\Desktop\Fairness Ops\runs\sdk_test_outputs\scenarios\sdk_baseline_c48447fd01
-ethnicity_downweight,sdk_ethnicity_downweight_82df7d81b3,RED,0.303459,2,4,C:\Users\venka\Desktop\Fairness Ops\runs\sdk_test_outputs\scenarios\sdk_ethnicity_downweight_82df7d81b3
-female_over65_downweight,sdk_female_over65_downweight_0b9f846855,RED,0.258473,2,3,C:\Users\venka\Desktop\Fairness Ops\runs\sdk_test_outputs\scenarios\sdk_female_over65_downweight_0b9f846855
-region_drift_like,sdk_region_drift_like_50c01e7ad1,RED,0.253822,2,4,C:\Users\venka\Desktop\Fairness Ops\runs\sdk_test_outputs\scenarios\sdk_region_drift_like_50c01e7ad1

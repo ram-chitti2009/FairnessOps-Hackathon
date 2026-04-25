@@ -1,5 +1,0 @@
-attribute,gap_trend_slope,drift_alert
-age_group,-0.039867804638632695,GREEN
-ethnicity,,INSUFFICIENT_DATA
-gender,0.09787515609375584,RED
-region,0.04495251355902985,RED

@@ -1,2 +1,0 @@
-overall_auc,overall_pr_auc,n_test,scenario,post_bias_auc,post_bias_pr_auc
-0.8362708871521534,0.5018014533160812,630,region_drift_like,0.8381347895752265,0.5169984587509608
