@@ -1,0 +1,5 @@
+dimension,key_output_file,headline_signal
+Demographic Fairness,fairness_by_attribute.csv,Max attribute gap: 0.254
+Representation,representation.csv,Suppressed groups: 10
+Intersectionality (2-way),intersectionality_top.csv,Top intersectional rows: 25
+Fairness Drift,fairness_drift_summary.csv,"Drift alerts: GREEN, INSUFFICIENT_DATA, RED"

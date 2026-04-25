@@ -1,0 +1,21 @@
+{
+  "run_id": "sdk_baseline_ca3b340857",
+  "run_timestamp_utc": "2026-04-25T19:13:22.609984+00:00",
+  "audit_schema_version": "1.0.0",
+  "pipeline_version": "0.1.0",
+  "n_rows": 630,
+  "protected_attributes": [
+    "ethnicity",
+    "gender",
+    "age_group",
+    "region"
+  ],
+  "thresholds": {
+    "fairness_red_gap": 0.2,
+    "fairness_yellow_gap": 0.1,
+    "rep_reliable_neff": 30.0,
+    "rep_low_conf_neff": 10.0,
+    "drift_red_slope": 0.02,
+    "drift_yellow_slope": 0.005
+  }
+}

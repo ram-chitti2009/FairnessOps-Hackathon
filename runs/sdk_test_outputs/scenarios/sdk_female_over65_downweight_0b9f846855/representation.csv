@@ -1,0 +1,19 @@
+attribute,group,n,positive_rate,n_eff,status
+age_group,over_65,300,0.10666666666666667,64.0,reliable
+age_group,45_65,209,0.09090909090909091,38.0,reliable
+age_group,under_45,120,0.016666666666666666,4.0,suppressed
+age_group,Unknown,1,0.0,0.0,suppressed
+ethnicity,Caucasian,506,0.08300395256916997,84.0,reliable
+ethnicity,African American,61,0.03278688524590164,4.0,suppressed
+ethnicity,Hispanic,29,0.06896551724137931,4.0,suppressed
+ethnicity,Other/Unknown,18,0.2222222222222222,8.0,suppressed
+ethnicity,Native American,7,0.0,0.0,suppressed
+ethnicity,Asian,5,0.6,4.0,suppressed
+ethnicity,Unknown,4,0.0,0.0,suppressed
+gender,Male,380,0.09736842105263158,74.0,reliable
+gender,Female,250,0.064,32.0,reliable
+region,Midwest,196,0.0663265306122449,26.0,low_confidence
+region,South,180,0.08333333333333333,30.0,reliable
+region,West,157,0.11464968152866242,36.0,reliable
+region,Unknown,55,0.05454545454545454,6.0,suppressed
+region,Northeast,42,0.09523809523809523,8.0,suppressed

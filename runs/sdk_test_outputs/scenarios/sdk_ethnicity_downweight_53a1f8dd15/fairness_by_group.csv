@@ -1,0 +1,19 @@
+attribute,group,n,auc
+age_group,45_65,209,0.8810249307479224
+age_group,Unknown,1,
+age_group,over_65,300,0.7690065298507462
+age_group,under_45,120,0.9915254237288136
+ethnicity,African American,61,0.538135593220339
+ethnicity,Asian,5,
+ethnicity,Caucasian,506,0.841594827586207
+ethnicity,Hispanic,29,
+ethnicity,Native American,7,
+ethnicity,Other/Unknown,18,
+ethnicity,Unknown,4,
+gender,Female,250,0.8552350427350427
+gender,Male,380,0.8412260657158617
+region,Midwest,196,0.7772173182009248
+region,Northeast,42,0.8026315789473684
+region,South,180,0.8949494949494949
+region,Unknown,55,0.8653846153846154
+region,West,157,0.8357314148681055

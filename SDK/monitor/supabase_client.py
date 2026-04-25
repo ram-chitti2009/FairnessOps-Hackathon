@@ -22,10 +22,6 @@ class SupabaseConfig:
     schema: str = "fairnessops"
     prediction_table: str = "prediction_events"
 
-    @property
-    def full_table_name(self) -> str:
-        return f"{self.schema}.{self.prediction_table}"
-
     @classmethod
     def from_env(cls) -> "SupabaseConfig":
         _load_dotenv_if_available()
@@ -61,7 +57,8 @@ class SupabaseEventClient:
         if not payload:
             return []
         result = (
-            self._client.table(self.config.full_table_name)
+            self._client.schema(self.config.schema)
+            .table(self.config.prediction_table)
             .insert(payload)
             .execute()
         )

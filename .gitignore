@@ -10,3 +10,8 @@ __pycache__/
 venv/
 .venv/
 
+eicu-collaborative-research-database-demo-2.0.1/
+brainstorming.tzt
+*.pdf
+*.md
+.env
