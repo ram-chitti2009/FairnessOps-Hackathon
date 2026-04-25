@@ -1,0 +1,6 @@
+table,rows,cols,n_missing_cells,unique_patientunitstayid,dup_patientunitstayid,unique_hospitalid,dup_hospitalid
+patient,2520,29,2579,2520.0,0.0,186.0,2334.0
+hospital,186,4,46,,,186.0,0.0
+lab,434660,10,40545,2444.0,432216.0,,
+vitalPeriodic,1634960,19,18662595,2375.0,1632585.0,,
+apachePatientResult,3676,23,7940,1838.0,1838.0,,
