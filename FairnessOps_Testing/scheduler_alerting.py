@@ -8,14 +8,15 @@ from supabase import create_client
 
 from SDK.monitor.supabase_client import SupabaseConfig
 
-from scheduler_config import DASHBOARD_URL, MODEL_NAME, SEV_CONSOLE, SEV_EMOJI, SLACK_WEBHOOK
+from scheduler_config import DASHBOARD_URL, SEV_CONSOLE, SEV_EMOJI, SLACK_WEBHOOK
 
 
 class AlertNotifier:
-    def __init__(self) -> None:
+    def __init__(self, model_name: str) -> None:
         s_cfg = SupabaseConfig.from_env()
         self._supabase = create_client(s_cfg.url, s_cfg.key)
         self._schema = s_cfg.schema
+        self._model_name = model_name
 
     @staticmethod
     def format_signal(alert: dict) -> str:
@@ -58,7 +59,7 @@ class AlertNotifier:
                 self._supabase.schema(self._schema)
                 .table("audit_runs")
                 .select("run_id, window_size")
-                .eq("model_name", MODEL_NAME)
+                .eq("model_name", self._model_name)
                 .order("created_at", desc=True)
                 .limit(1)
                 .execute()
@@ -97,7 +98,7 @@ class AlertNotifier:
         red_count = sum(1 for a in alerts if a["severity"] == "RED")
         yellow_count = sum(1 for a in alerts if a["severity"] == "YELLOW")
         header = (
-            f"{'🚨' if red_count else '⚠️'} *FairnessOps Alert - {MODEL_NAME}*\n"
+            f"{'🚨' if red_count else '⚠️'} *FairnessOps Alert - {self._model_name}*\n"
             f"*{red_count} Critical | {yellow_count} Warnings* | {window_size:,} patients scored"
         )
 
@@ -123,7 +124,7 @@ class AlertNotifier:
                     {
                         "type": "button",
                         "text": {"type": "plain_text", "text": "View Dashboard"},
-                        "url": f"{DASHBOARD_URL}?model={MODEL_NAME}",
+                        "url": f"{DASHBOARD_URL}?model={self._model_name}",
                         "style": "danger" if red_count else "primary",
                     }
                 ],

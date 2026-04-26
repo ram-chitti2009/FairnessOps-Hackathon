@@ -76,12 +76,12 @@ export function HealthScoreCard({ audit, alerts, lastFetched, ctx }: Props) {
                   className="inline-block px-2.5 py-0.5 rounded text-sm font-bold"
                   style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
                 >
-                  Status {grade}
+                  {grade}
                 </span>
               </div>
             </div>
             <p className="text-xs text-text-muted mt-2">
-              {audit.dimensions.length} fairness checks active · {lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} UTC
+              {audit.dimensions.length} fairness checks active · Run {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", timeZoneName: "short" }).format(new Date(audit.created_at))}
             </p>
           </div>
 

@@ -115,9 +115,19 @@ export function MetricsExplorer({ metrics }: Props) {
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
                   <ReferenceLine x={0} stroke="#1a2d45" />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                    {chartData.map((d, i) => (
-                      <Cell key={i} fill={d.value < 0 ? "#ef4444" : d.value > 0.1 ? "#3b82f6" : "#22c55e"} />
-                    ))}
+                    {chartData.map((d, i) => {
+                      // For trend slopes, negative = gap closing = improvement (green).
+                      // For all other metrics, use absolute magnitude for severity coloring.
+                      const isTrend = currentMetricName === "gap_trend_slope";
+                      let fill: string;
+                      if (isTrend) {
+                        fill = d.value < -0.005 ? "#22c55e" : d.value > 0.02 ? "#ef4444" : "#f59e0b";
+                      } else {
+                        const abs = Math.abs(d.value);
+                        fill = abs >= 0.1 ? "#ef4444" : abs >= 0.05 ? "#f59e0b" : "#22c55e";
+                      }
+                      return <Cell key={i} fill={fill} />;
+                    })}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

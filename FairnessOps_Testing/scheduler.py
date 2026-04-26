@@ -11,6 +11,7 @@ Thin entrypoint that composes modular scheduler parts:
 """
 
 import sys
+import threading
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,23 +20,48 @@ if str(ROOT) not in sys.path:
 
 from scheduler_alerting import AlertNotifier  # noqa: E402
 from scheduler_core import log, run_scheduler_loop  # noqa: E402
-from scheduler_config import DATASET_MODE  # noqa: E402
+from scheduler_config import MODELS_CONFIG  # noqa: E402
 
-if DATASET_MODE == "eicu":
-    from scheduler_runtime_eicu import startup_runtime  # noqa: E402
-elif DATASET_MODE == "synthetic":
-    from scheduler_runtime_synthetic import startup_runtime  # noqa: E402
-elif DATASET_MODE == "cancer":
-    from scheduler_runtime import startup_runtime  # noqa: E402
-else:
-    raise ValueError(f"Unsupported DATASET_MODE='{DATASET_MODE}'. Use 'cancer', 'eicu', or 'synthetic'.")
+
+def _import_startup(mode: str):
+    if mode == "eicu":
+        from scheduler_runtime_eicu import startup_runtime
+    elif mode == "synthetic":
+        from scheduler_runtime_synthetic import startup_runtime
+    elif mode == "cancer":
+        from scheduler_runtime import startup_runtime
+    else:
+        raise ValueError(f"Unsupported mode '{mode}'. Use 'cancer', 'eicu', or 'synthetic'.")
+    return startup_runtime
 
 
 def main() -> None:
-    log(f"Dataset mode: {DATASET_MODE}")
-    state = startup_runtime(log)
-    notifier = AlertNotifier()
-    run_scheduler_loop(state, notifier)
+    threads: list[threading.Thread] = []
+
+    for model_cfg in MODELS_CONFIG:
+        mode = model_cfg["mode"]
+        model_name = model_cfg["model_name"]
+        log(f"[{model_name}] Bootstrapping runtime (mode={mode})...")
+
+        startup_runtime = _import_startup(mode)
+        state = startup_runtime(log)
+        notifier = AlertNotifier(model_name=model_name)
+
+        t = threading.Thread(
+            target=run_scheduler_loop,
+            args=(state, notifier, model_cfg),
+            daemon=True,
+            name=f"scheduler-{model_name}",
+        )
+        threads.append(t)
+
+    for t in threads:
+        t.start()
+
+    log(f"All {len(threads)} model scheduler(s) started. Press Ctrl+C to stop.")
+
+    for t in threads:
+        t.join()
 
 
 if __name__ == "__main__":

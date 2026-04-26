@@ -52,7 +52,7 @@ export function computeHealthScore(alerts: AlertRow[]): {
   grade: string;
   color: string;
 } {
-  if (!alerts.length) return { score: 100, grade: "A", color: "#22c55e" };
+  if (!alerts.length) return { score: 100, grade: "Excellent", color: "#22c55e" };
   // Health index weights are intentionally conservative so low-volume runs
   // don't collapse to 0 too easily while still reflecting critical risk.
   const red = alerts.filter((a) => a.severity === "RED").length;
@@ -69,11 +69,11 @@ export function computeHealthScore(alerts: AlertRow[]): {
       Math.max(0, Math.floor((alerts.length - 12) / 8)),
   );
   const score = Math.max(0, 100 - penalty);
-  if (score >= 85) return { score, grade: "A", color: "#22c55e" };
-  if (score >= 70) return { score, grade: "B", color: "#86efac" };
-  if (score >= 50) return { score, grade: "C", color: "#f59e0b" };
-  if (score >= 30) return { score, grade: "D", color: "#f97316" };
-  return { score, grade: "F", color: "#ef4444" };
+  if (score >= 85) return { score, grade: "Excellent", color: "#22c55e" };
+  if (score >= 70) return { score, grade: "Good", color: "#86efac" };
+  if (score >= 50) return { score, grade: "Review", color: "#f59e0b" };
+  if (score >= 30) return { score, grade: "Caution", color: "#f97316" };
+  return { score, grade: "Critical", color: "#ef4444" };
 }
 
 /** Parse LLM markdown response → clean paragraphs + action items */

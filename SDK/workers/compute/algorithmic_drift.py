@@ -102,7 +102,10 @@ def compute_algorithmic_drift_outputs(
     valid["is_changepoint"] = False
     for cp in cps:
         if 0 <= cp < len(valid):
-            valid.loc[cp, "is_changepoint"] = True
+            # cp is a 0-based positional index into auc_series / valid rows.
+            # valid.index may have non-contiguous labels if any windows had NaN AUC
+            # and were dropped, so use iloc (positional) not loc (label-based).
+            valid.iloc[cp, valid.columns.get_loc("is_changepoint")] = True
 
     windows_df = windows_df.merge(
         valid[["window_id", "is_changepoint"]],

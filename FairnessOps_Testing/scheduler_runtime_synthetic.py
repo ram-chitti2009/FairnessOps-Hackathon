@@ -105,7 +105,7 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
 
     target_col = "y_true"
     patient_col = "patientunitstayid"
-    protected = ["gender", "ethnicity"]
+    protected = ["ethnicity", "gender", "age_group", "region"]
     feature_cols = [
         "age_group",
         "insurance",
@@ -155,6 +155,8 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
     x_monitor = monitor_df[feature_cols].copy()
     x_monitor["gender"] = monitor_df["gender"].astype(str).values
     x_monitor["ethnicity"] = monitor_df["ethnicity"].astype(str).values
+    x_monitor["age_group"] = monitor_df["age_group"].astype(str).values
+    x_monitor["region"] = monitor_df["region"].astype(str).values
     x_monitor = x_monitor.astype(object).where(pd.notnull(x_monitor), None)
 
     @monitor(model_name=MODEL_NAME, protected_attrs=protected)

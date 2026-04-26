@@ -21,9 +21,9 @@ build/
 # ── Data / large files ────────────────────────────────────────────────────────
 *.csv
 *.pdf
+*.txt
+*.md
 eicu-collaborative-research-database-demo-2.0.1/
-brainstorming.txt
-brainstorming.tzt
 
 # ── Run artifacts ─────────────────────────────────────────────────────────────
 runs/
@@ -34,6 +34,7 @@ dashboard-next/.next/
 dashboard-next/out/
 dashboard-next/.env.local
 dashboard-next/.env.*.local
+dashboard-next/tsconfig.tsbuildinfo
 
 # ── Misc ──────────────────────────────────────────────────────────────────────
 .DS_Store

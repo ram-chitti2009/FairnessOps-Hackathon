@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Activity, Bell, FileCheck2, Gauge, GitCompareArrows, LayoutGrid, Lock, RefreshCw, Settings, ShieldCheck, UserRound, Wifi, WifiOff } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
 const DEMO_ACCESS_CODE = process.env.NEXT_PUBLIC_DEMO_ACCESS_CODE ?? "";
@@ -34,14 +34,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   } = useDashboardData();
   const [accessCode, setAccessCode] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    if (!DEMO_ACCESS_CODE) return true;
+  // Default to unlocked when no access code is configured; read localStorage in an
+  // effect to avoid SSR/hydration mismatch (window is not available server-side).
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(!DEMO_ACCESS_CODE);
+
+  useEffect(() => {
+    if (!DEMO_ACCESS_CODE) return;
     try {
-      return window.localStorage.getItem("fairnessops_demo_unlock") === "1";
+      setIsUnlocked(window.localStorage.getItem("fairnessops_demo_unlock") === "1");
     } catch {
-      return false;
+      // no-op
     }
-  });
+  }, []);
 
   const rt = {
     live: { label: "Live updates active", color: "text-green-400", Icon: Wifi },
@@ -219,9 +223,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className="px-4 sm:px-6 py-6">{children}</main>
+          <main className="px-4 sm:px-6 py-6 pb-20 lg:pb-6">{children}</main>
         </div>
       </div>
+
+      {/* Mobile bottom navigation — visible below lg breakpoint */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#081325]/95 backdrop-blur-sm border-t border-border flex items-stretch h-14">
+        {NAV_ITEMS.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                isActive ? "text-info" : "text-text-muted hover:text-text-secondary"
+              }`}
+            >
+              <Icon className="h-4.5 w-4.5" style={{ width: "18px", height: "18px" }} />
+              <span>{item.label}</span>
+              {isActive && <span className="absolute bottom-0 block h-0.5 w-8 rounded-full bg-info" />}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

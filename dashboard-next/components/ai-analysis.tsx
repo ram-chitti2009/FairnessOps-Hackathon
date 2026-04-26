@@ -36,6 +36,12 @@ export function AIAnalysis({ text, error, loading }: Props) {
           </div>
         )}
 
+        {!text && !error && !loading && (
+          <p className="text-sm text-text-muted">
+            Awaiting briefing — will generate after the first audit run loads.
+          </p>
+        )}
+
         {text && !loading && (() => {
           const { summary, actions } = parseLLMResponse(text);
           return (

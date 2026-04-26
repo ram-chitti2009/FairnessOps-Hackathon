@@ -132,7 +132,17 @@ export function DriftChart({ metrics }: Props) {
               <LineChart data={algoWindow} margin={{ left: 8, right: 20, top: 8, bottom: 4 }}>
                 <XAxis dataKey="window" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 1]} tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const pt = payload[0].payload as { auc: number; isCp: boolean };
+                  return (
+                    <div className="bg-surface border border-border rounded-lg px-3 py-2 text-xs">
+                      <p className="text-text-secondary mb-0.5">{label}</p>
+                      <p className="text-text-primary font-semibold">AUC: {pt.auc?.toFixed(4)}</p>
+                      {pt.isCp && <p className="text-critical mt-0.5 font-medium">Changepoint detected</p>}
+                    </div>
+                  );
+                }} />
                 <Line
                   type="monotone"
                   dataKey="auc"

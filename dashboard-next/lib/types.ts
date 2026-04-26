@@ -13,7 +13,7 @@ export interface AuditRun {
 }
 
 export interface MetricRow {
-  id?: string;
+  metric_id?: number;
   run_id: string;
   dimension: string;
   attribute: string;
@@ -25,7 +25,7 @@ export interface MetricRow {
 }
 
 export interface AlertRow {
-  id?: string;
+  alert_id?: number;
   run_id: string;
   dimension: string;
   attribute: string;

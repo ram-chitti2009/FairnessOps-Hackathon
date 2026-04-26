@@ -95,12 +95,15 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       .then((list) => {
         setModels(list);
         if (!list.length) return;
-        if (!list.includes(modelName)) setModelNameState(list[0]);
+        // Use functional update to avoid stale closure — only redirect if the
+        // current model isn't in the list (e.g. first load with fallback name).
+        setModelNameState((current) => list.includes(current) ? current : list[0]);
       })
       .catch(() => {
         // API can be warming up; hard failure is handled in main refresh.
       });
-  }, [modelName]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetch model list once on mount
 
   const refresh = useCallback(async () => {
     setLoading(true);

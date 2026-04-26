@@ -61,8 +61,9 @@ export function AlertsTable({ alerts, ctx, windowSize }: Props) {
                 ? estimateImpact(windowSize, a.signal_value, a.dimension)
                 : null;
               const isCrit  = a.severity === "RED";
+              const rowKey = `${a.run_id}-${a.dimension}-${a.attribute}-${a.subgroup ?? "all"}-${i}`;
               return (
-              <tr key={i} className={`border-b border-border/50 hover:bg-muted/20 transition-colors ${isCrit ? "bg-critical/5" : ""}`}>
+              <tr key={rowKey} className={`border-b border-border/50 hover:bg-muted/20 transition-colors ${isCrit ? "bg-critical/5" : ""}`}>
                 <td className="px-4 py-3 whitespace-nowrap align-top">
                   <SeverityBadge severity={a.severity as SeverityLevel} size="sm" />
                 </td>
@@ -90,7 +91,7 @@ export function AlertsTable({ alerts, ctx, windowSize }: Props) {
             })}
             {paged.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-muted text-sm">
+                <td colSpan={5} className="px-4 py-8 text-center text-text-muted text-sm">
                   No alerts match the current filters.
                 </td>
               </tr>

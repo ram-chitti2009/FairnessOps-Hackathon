@@ -49,9 +49,10 @@ export function LiveAlertFeed({ alerts, realtimeStatus, ctx }: Props) {
           <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">
             {alerts.map((a, i) => {
               const isOpen = expanded === i;
+              const key = `${a.run_id}-${a.dimension}-${a.attribute}-${a.subgroup ?? ""}-${i}`;
               return (
                 <div
-                  key={i}
+                  key={key}
                   className="rounded-lg border border-border/50 bg-muted/10 hover:border-border transition-colors cursor-pointer"
                   onClick={() => setExpanded(isOpen ? null : i)}
                 >

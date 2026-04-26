@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertsTable } from "@/components/alerts-table";
+import { SeverityBadge } from "@/components/ui/badge";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import type { SeverityLevel } from "@/lib/types";
 
 type IncidentStatus = "new" | "acknowledged" | "investigating" | "resolved";
 
@@ -68,8 +70,11 @@ export default function IncidentsPage() {
       </div>
 
       <div className="rounded-lg border border-border bg-surface overflow-hidden">
-        <div className="px-4 py-3 border-b border-border">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-text-muted">Current queue</p>
+          {alerts.length > 50 && (
+            <p className="text-[11px] text-text-muted">Showing first 50 of {alerts.length} findings</p>
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -88,7 +93,7 @@ export default function IncidentsPage() {
                     {alert.dimension} · {alert.attribute}
                     {alert.subgroup ? ` (${alert.subgroup})` : ""}
                   </td>
-                  <td className="px-4 py-2.5 text-xs text-text-primary">{alert.severity}</td>
+                  <td className="px-4 py-2.5"><SeverityBadge severity={alert.severity as SeverityLevel} size="sm" /></td>
                   <td className="px-4 py-2.5">
                     <select
                       value={status}
