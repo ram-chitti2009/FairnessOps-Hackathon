@@ -8,7 +8,7 @@ Continuous fairness monitoring for clinical AI models, running in production.
 
 | Name | GitHub Handle |
 |------|---------------|
-| Venkat | [@venkat](https://github.com/ram-chitti2009) |
+| Ram | [@Ram](https://github.com/ram-chitti2009) |
 
 
 ---
