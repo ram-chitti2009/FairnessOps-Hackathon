@@ -4,7 +4,6 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { SeverityBadge } from "@/components/ui/badge";
 import type { MetricRow } from "@/lib/types";
 
 interface Props { metrics: MetricRow[] }
@@ -98,8 +97,8 @@ export function DriftChart({ metrics }: Props) {
             Each point is a recent monitoring window. An upward line means the fairness gap is worsening for <span className="text-text-secondary font-medium">{attr}</span>.
           </p>
           {gapData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={gapData} margin={{ left: 0, right: 16, top: 8, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={gapData} margin={{ left: 8, right: 20, top: 8, bottom: 4 }}>
                 <XAxis dataKey="window" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
@@ -129,8 +128,8 @@ export function DriftChart({ metrics }: Props) {
             <p className="text-xs text-text-muted mb-3">
               This shows model performance across recent windows. Red markers indicate PELT changepoints (sudden regime shifts).
             </p>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={algoWindow} margin={{ left: 0, right: 16, top: 8, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={algoWindow} margin={{ left: 8, right: 20, top: 8, bottom: 4 }}>
                 <XAxis dataKey="window" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 1]} tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip />

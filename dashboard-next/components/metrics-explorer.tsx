@@ -36,6 +36,13 @@ function friendlyMetricName(name: string): string {
   return map[name] ?? name.replace(/_/g, " ");
 }
 
+function friendlyGroupLabel(attribute: string, subgroup: string | null): string {
+  if (attribute === "model_overall") return "Overall model";
+  if (!subgroup || subgroup === "all") return attribute;
+  if (subgroup.startsWith("window_")) return `${attribute} (${subgroup.replace("window_", "Window ")})`;
+  return `${attribute} (${subgroup})`;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const val = payload[0].value as number;
@@ -62,7 +69,7 @@ export function MetricsExplorer({ metrics }: Props) {
     return metrics
       .filter((m) => m.dimension === dim && m.metric_name === currentMetricName && m.metric_value !== null)
       .map((m) => ({
-        label: `${m.attribute} · ${m.subgroup ?? "all"}`,
+        label: friendlyGroupLabel(m.attribute, m.subgroup),
         value: m.metric_value as number,
       }))
       .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
@@ -99,19 +106,23 @@ export function MetricsExplorer({ metrics }: Props) {
           Use this view for deeper review. Values are grouped by patient population for the selected safety check.
         </p>
         {chartData.length ? (
-          <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 28)}>
-            <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
-              <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 11 }} axisLine={false} tickLine={false} width={180} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
-              <ReferenceLine x={0} stroke="#1a2d45" />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                {chartData.map((d, i) => (
-                  <Cell key={i} fill={d.value < 0 ? "#ef4444" : d.value > 0.1 ? "#3b82f6" : "#22c55e"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <div style={{ height: Math.max(240, chartData.length * 30), minWidth: 680 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 24, top: 0, bottom: 0 }}>
+                  <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 11 }} axisLine={false} tickLine={false} width={220} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
+                  <ReferenceLine x={0} stroke="#1a2d45" />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                    {chartData.map((d, i) => (
+                      <Cell key={i} fill={d.value < 0 ? "#ef4444" : d.value > 0.1 ? "#3b82f6" : "#22c55e"} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         ) : (
           <p className="text-sm text-text-muted py-8 text-center">No values available for this selection yet.</p>
         )}

@@ -21,6 +21,7 @@ import { AlertTriangle } from "lucide-react";
 const FALLBACK_MODEL = "monitor_ingest_smoke_20260425212709";
 
 interface LLMState { text: string | null; error: string | null; loading: boolean }
+const DEMO_ACCESS_CODE = process.env.NEXT_PUBLIC_DEMO_ACCESS_CODE ?? "";
 
 async function callLLM(
   audit: AuditRun,
@@ -68,7 +69,20 @@ function DashboardInner() {
   const [llm, setLLM]                   = useState<LLMState>({ text: null, error: null, loading: false });
   const [activeTab, setActiveTab]       = useState<"overview" | "alerts" | "metrics" | "drift" | "live">("overview");
   const [ctx, setCtx]                   = useState<ModelContext>(() => getModelContext(modelName));
+  const [accessCode, setAccessCode]     = useState("");
+  const [authError, setAuthError]       = useState<string | null>(null);
+  const [isUnlocked, setIsUnlocked]     = useState<boolean>(() => !DEMO_ACCESS_CODE);
   const lastRunId                        = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!DEMO_ACCESS_CODE) return;
+    try {
+      const cached = window.localStorage.getItem("fairnessops_demo_unlock");
+      if (cached === "1") setIsUnlocked(true);
+    } catch {
+      // no-op
+    }
+  }, []);
 
   // ── Load available models once on mount ──────────────────────────────────
   useEffect(() => {
@@ -167,6 +181,46 @@ function DashboardInner() {
 
   return (
     <div className="min-h-screen bg-background">
+      {!isUnlocked && (
+        <div className="fixed inset-0 z-[100] bg-[#030b16]/95 backdrop-blur-sm flex items-center justify-center px-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-text-primary">Secure demo access</h2>
+            <p className="text-sm text-text-muted">
+              Enter access code to view the clinical monitoring dashboard.
+            </p>
+            <input
+              type="password"
+              value={accessCode}
+              onChange={(e) => { setAccessCode(e.target.value); setAuthError(null); }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                if (accessCode.trim() === DEMO_ACCESS_CODE) {
+                  setIsUnlocked(true);
+                  try { window.localStorage.setItem("fairnessops_demo_unlock", "1"); } catch {}
+                } else {
+                  setAuthError("Invalid access code.");
+                }
+              }}
+              className="w-full bg-muted border border-border text-text-secondary text-sm rounded-md px-3 py-2 focus:outline-none focus:border-info"
+              placeholder="Access code"
+            />
+            {authError && <p className="text-xs text-critical">{authError}</p>}
+            <button
+              onClick={() => {
+                if (accessCode.trim() === DEMO_ACCESS_CODE) {
+                  setIsUnlocked(true);
+                  try { window.localStorage.setItem("fairnessops_demo_unlock", "1"); } catch {}
+                } else {
+                  setAuthError("Invalid access code.");
+                }
+              }}
+              className="w-full px-3 py-2 rounded-md bg-info/15 border border-info/40 text-info text-sm font-semibold hover:bg-info/25 transition-colors"
+            >
+              Enter dashboard
+            </button>
+          </div>
+        </div>
+      )}
       <Navbar
         modelName={modelName}
         models={models}

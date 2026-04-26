@@ -41,35 +41,57 @@ export function AlertCharts({ alerts }: Props) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card>
-        <CardHeader><CardTitle>Urgency mix across findings</CardTitle></CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={sevData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-              <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 12 }} axisLine={false} tickLine={false} width={75} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
-                {sevData.map((d) => (
-                  <Cell key={d.sev} fill={SEV_COLOR[d.sev as SeverityLevel] ?? "#3d5a7a"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle>Urgency mix across findings</CardTitle>
+          <p className="text-xs text-text-muted">Shows how many findings need immediate review versus monitoring.</p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {sevData.length ? (
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={sevData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
+                <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 12 }} axisLine={false} tickLine={false} width={88} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                  {sevData.map((d) => (
+                    <Cell key={d.sev} fill={SEV_COLOR[d.sev as SeverityLevel] ?? "#3d5a7a"} />
+                  ))}
+                </Bar>
+              </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center">
+              <p className="text-sm text-text-muted text-center">No findings yet for urgency breakdown.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader><CardTitle>Where care-equity risks are concentrated</CardTitle></CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={dimData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
-              <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 12 }} axisLine={false} tickLine={false} width={95} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
-              <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} maxBarSize={24} />
-            </BarChart>
-          </ResponsiveContainer>
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle>Where care-equity risks are concentrated</CardTitle>
+          <p className="text-xs text-text-muted">Highlights which safety checks currently generate the most findings.</p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {dimData.length ? (
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dimData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
+                  <XAxis type="number" tick={{ fill: "#3d5a7a", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="label" tick={{ fill: "#7a9cc0", fontSize: 12 }} axisLine={false} tickLine={false} width={120} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "#0f2035" }} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center">
+              <p className="text-sm text-text-muted text-center">No findings yet for concentration view.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
