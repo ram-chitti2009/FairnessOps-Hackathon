@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+body {
+  background: #060d1a;
+  color: #e8f0fe;
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #060d1a; }
+::-webkit-scrollbar-thumb { background: #1a2d45; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1e3350; }
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #0d1929 !important;
+  border: 1px solid #1a2d45 !important;
+  border-radius: 8px !important;
+  color: #e8f0fe !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #0f2035 !important;
+}
