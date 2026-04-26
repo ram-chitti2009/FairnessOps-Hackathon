@@ -112,7 +112,7 @@ All responses to fairness alerts are human decisions made by clinical staff, inf
 
 ### Known data biases
 
-**APACHE score:** The APACHE severity system has documented calibration gaps across ethnic groups (Glance et al., 2012; Decruyenaere et al., 2020). Using APACHE as a model feature propagates that existing bias into the model signal. FairnessOps surfaces this rather than concealing it.
+**APACHE score:** The APACHE severity system has documented calibration gaps across ethnic groups. Using APACHE as a model feature propagates that existing bias into the model signal. FairnessOps surfaces this rather than concealing it.
 
 **Outcome imbalance:** In-hospital ICU mortality is a rare event at approximately 10-15% prevalence. Even with `class_weight="balanced"`, the precision-recall tradeoff affects minority groups disproportionately because they have fewer positive cases in the training window.
 
