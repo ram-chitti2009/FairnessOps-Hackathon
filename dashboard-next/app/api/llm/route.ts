@@ -24,15 +24,44 @@ export async function POST(req: NextRequest) {
 
   const { audit, alerts, metrics, clinicalContext } = await req.json();
 
+  function llmSignalText(a: any): string | null {
+    const dim = String(a?.dimension ?? "");
+    const raw = a?.signal_value;
+    if (raw === null || raw === undefined || Number.isNaN(Number(raw))) return null;
+    const n = Number(raw);
+
+    if (dim === "Demographic Fairness") return `${Math.abs(n * 100).toFixed(1)}% outcome gap`;
+    if (dim === "Representation") return `${Math.round(n)} patients`;
+    if (dim.includes("Intersectionality")) {
+      if (n >= 1.0) return "Severe compound gap";
+      if (n >= 0.5) return "High compound gap";
+      if (n >= 0.2) return "Moderate compound gap";
+      return "Low compound gap";
+    }
+    if (dim === "Fairness Drift") {
+      if (n > 0.005) return "Gap widening";
+      if (n < -0.005) return "Gap closing";
+      return "Gap stable";
+    }
+    if (dim === "Algorithmic Drift (PELT)") return `${Math.abs(n * 100).toFixed(1)}% performance drop`;
+    if (dim === "Threshold Parity") return `${Math.abs(n * 100).toFixed(1)}% care-escalation gap`;
+    if (dim === "False Negative Gap") return `${Math.abs(n * 100).toFixed(1)}% missed-care gap`;
+    if (dim === "Calibration Fairness") return `${Math.abs(n * 100).toFixed(1)}% risk-score mismatch`;
+    if (dim === "Feature Drift") {
+      if (n >= 0.20) return "Major distribution shift";
+      if (n >= 0.10) return "Moderate distribution shift";
+      return "Minor distribution shift";
+    }
+    return null;
+  }
+
   const topAlerts = (alerts ?? []).slice(0, 6).map((a: any) => ({
     dimension: a.dimension,
     attribute: a.attribute,
     subgroup: a.subgroup,
     severity: a.severity,
-    // Convert raw signal to plain-English percentage for the LLM
-    signal: a.signal_value != null
-      ? `${(Math.abs(a.signal_value) * 100).toFixed(1)}% gap`
-      : null,
+    signal_text: llmSignalText(a),
+    raw_signal_value: a.signal_value,
   }));
 
   const context = {
@@ -74,9 +103,13 @@ Instead say things like "less likely to receive care", "the gap between groups",
 
 Rules:
 - No markdown, no bold stars, no bullet symbols.
-- Output exactly: one summary paragraph (2-3 sentences, include specific percentages and group names from the data).
+- Output exactly: one summary paragraph (2-3 sentences, include specific values and group names from the data).
 - Then write "Recommended Actions:" followed by exactly 3 numbered items. Each item must start with a short action label, then a colon, then one sentence explaining what to do and why.
 - Reference the compliance framework if there are critical findings.
+- Never convert patient counts into percentages.
+- Never infer or compute new percentages from raw_signal_value.
+- Use signal_text verbatim when citing a finding.
+- If a finding is a low-sample representation issue, describe it as a data sufficiency risk (not a performance % gap).
 
 DATA:
 ${JSON.stringify(context, null, 2)}`;

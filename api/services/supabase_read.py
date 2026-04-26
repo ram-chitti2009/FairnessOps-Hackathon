@@ -15,10 +15,28 @@ class SupabaseReadService:
     def _table(self, name: str):
         return self.client.schema(self.s_cfg.schema).table(name)
 
+    def list_models(self) -> List[str]:
+        """Return all distinct model names that have at least one audit run, sorted."""
+        res = (
+            self._table("audit_runs")
+            .select("model_name")
+            .order("model_name")
+            .execute()
+        )
+        rows = list(res.data or [])
+        seen: set = set()
+        result: List[str] = []
+        for r in rows:
+            m = r.get("model_name")
+            if m and m not in seen:
+                seen.add(m)
+                result.append(str(m))
+        return result
+
     def latest_run(self, model_name: str) -> Optional[Dict[str, Any]]:
         res = (
             self._table("audit_runs")
-            .select("run_id, created_at, model_name, model_version, window_size, status")
+            .select("run_id, created_at, model_name, model_version, window_size, status, metadata")
             .eq("model_name", model_name)
             .order("created_at", desc=True)
             .limit(1)

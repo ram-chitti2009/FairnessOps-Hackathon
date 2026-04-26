@@ -40,6 +40,16 @@ class AlertNotifier:
             if n < -0.005:
                 return "Gap closing"
             return "Gap stable"
+        if dim == "Algorithmic Drift (PELT)":
+            return f"{abs(n * 100):.1f}% AUC drop"
+        if dim == "Threshold Parity":
+            return f"{abs(n * 100):.1f}% flag-rate gap"
+        if dim == "False Negative Gap":
+            return f"{abs(n * 100):.1f}% miss-rate gap"
+        if dim == "Calibration Fairness":
+            return f"{abs(n * 100):.1f}% calibration gap"
+        if dim == "Feature Drift":
+            return f"KS={n:.3f}"
         return f"{n:.3f}"
 
     def check_and_notify(self, log: Callable[[str], None]) -> None:

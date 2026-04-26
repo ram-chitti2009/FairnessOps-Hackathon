@@ -9,7 +9,6 @@ from SDK.workers.run_worker import run_once
 
 from scheduler_alerting import AlertNotifier
 from scheduler_config import BATCH_SIZE, DASHBOARD_URL, MODEL_NAME, PREDICT_INTERVAL, WORKER_INTERVAL
-from scheduler_runtime import RuntimeState
 
 
 def ts() -> str:
@@ -20,7 +19,7 @@ def log(msg: str) -> None:
     print(f"[{ts()}] {msg}", flush=True)
 
 
-def simulate_predictions(state: RuntimeState) -> None:
+def simulate_predictions(state) -> None:
     n = len(state.x_monitor)
     start = state.batch_cursor % n
     end = min(start + BATCH_SIZE, n)
@@ -32,7 +31,7 @@ def simulate_predictions(state: RuntimeState) -> None:
     log(f"Predicted batch [{start}:{end}] ({len(batch_x)} patients) -> Supabase")
 
 
-def run_worker_job(state: RuntimeState, notifier: AlertNotifier) -> None:
+def run_worker_job(state, notifier: AlertNotifier) -> None:
     log("Running fairness worker...")
     try:
         run_once(state.worker_cfg)
@@ -42,7 +41,7 @@ def run_worker_job(state: RuntimeState, notifier: AlertNotifier) -> None:
         log(f"Worker error: {exc}")
 
 
-def run_scheduler_loop(state: RuntimeState, notifier: AlertNotifier) -> None:
+def run_scheduler_loop(state, notifier: AlertNotifier) -> None:
     simulate_predictions(state)
     run_worker_job(state, notifier)
 

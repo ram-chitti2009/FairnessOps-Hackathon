@@ -1,4 +1,4 @@
-# Python cache / env
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -9,10 +9,33 @@ __pycache__/
 .ipynb_checkpoints/
 venv/
 .venv/
+*.egg-info/
+dist/
+build/
 
-eicu-collaborative-research-database-demo-2.0.1/
-brainstorming.tzt
-*.pdf
-*.md
+# ── Environment / secrets ─────────────────────────────────────────────────────
 .env
+.env.*
+!.env.example
+
+# ── Data / large files ────────────────────────────────────────────────────────
 *.csv
+*.pdf
+eicu-collaborative-research-database-demo-2.0.1/
+brainstorming.txt
+brainstorming.tzt
+
+# ── Run artifacts ─────────────────────────────────────────────────────────────
+runs/
+
+# ── Next.js dashboard ─────────────────────────────────────────────────────────
+dashboard-next/node_modules/
+dashboard-next/.next/
+dashboard-next/out/
+dashboard-next/.env.local
+dashboard-next/.env.*.local
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log

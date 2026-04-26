@@ -40,6 +40,11 @@ export const DIM_ABBR: Record<string, string> = {
   "Representation": "Representation",
   "Intersectionality (2-way)": "Intersectionality",
   "Fairness Drift": "Drift",
+  "Algorithmic Drift (PELT)": "Algo Drift",
+  "Threshold Parity": "Threshold Parity",
+  "False Negative Gap": "FNR Gap",
+  "Calibration Fairness": "Calibration",
+  "Feature Drift": "Feature Drift",
 };
 
 export function computeHealthScore(alerts: AlertRow[]): {
@@ -48,9 +53,21 @@ export function computeHealthScore(alerts: AlertRow[]): {
   color: string;
 } {
   if (!alerts.length) return { score: 100, grade: "A", color: "#22c55e" };
+  // Health index weights are intentionally conservative so low-volume runs
+  // don't collapse to 0 too easily while still reflecting critical risk.
   const red = alerts.filter((a) => a.severity === "RED").length;
   const yellow = alerts.filter((a) => a.severity === "YELLOW").length;
-  const penalty = Math.min(100, red * 8 + yellow * 3 + Math.max(0, Math.floor((alerts.length - 10) / 5)));
+  const representationRed = alerts.filter(
+    (a) => a.severity === "RED" && a.dimension === "Representation",
+  ).length;
+  const harmfulRed = Math.max(0, red - representationRed);
+  const penalty = Math.min(
+    100,
+    harmfulRed * 7 +
+      representationRed * 3 +
+      yellow * 2 +
+      Math.max(0, Math.floor((alerts.length - 12) / 8)),
+  );
   const score = Math.max(0, 100 - penalty);
   if (score >= 85) return { score, grade: "A", color: "#22c55e" };
   if (score >= 70) return { score, grade: "B", color: "#86efac" };
@@ -119,14 +136,44 @@ export function humanSignal(alert: {
   }
 
   if (dim.includes("Intersectionality")) {
-    const pct = Math.abs(n * 100).toFixed(1);
-    return `${pct}% combined gap`;
+    // signal_value is gap × √(n_eff) — a priority score, NOT a 0-1 fraction.
+    // Map to plain severity labels so it isn't misread as a percentage.
+    if (n >= 1.0) return "Severe compound gap";
+    if (n >= 0.5) return "High compound gap";
+    if (n >= 0.2) return "Moderate compound gap";
+    return "Low compound gap";
   }
 
   if (dim === "Fairness Drift") {
     if (n > 0.005) return "Gap widening";
     if (n < -0.005) return "Gap closing";
     return "Gap stable";
+  }
+
+  if (dim === "Algorithmic Drift (PELT)") {
+    const pct = Math.abs(n * 100).toFixed(1);
+    return `${pct}% performance drop`;
+  }
+
+  if (dim === "Threshold Parity") {
+    const pct = Math.abs(n * 100).toFixed(1);
+    return `${pct}% care-escalation gap`;
+  }
+
+  if (dim === "False Negative Gap") {
+    const pct = Math.abs(n * 100).toFixed(1);
+    return `${pct}% missed-care gap`;
+  }
+
+  if (dim === "Calibration Fairness") {
+    const pct = Math.abs(n * 100).toFixed(1);
+    return `${pct}% risk-score mismatch`;
+  }
+
+  if (dim === "Feature Drift") {
+    if (n >= 0.20) return "Major distribution shift";
+    if (n >= 0.10) return "Moderate distribution shift";
+    return "Minor distribution shift";
   }
 
   return n.toFixed(3);
@@ -182,19 +229,27 @@ export function riskContext(
     if (v === null) return "Patient count could not be determined for this group.";
     const n = Math.round(Number(v));
     if (n < 10)
-      return `Only ${n} ${attr ? attr.toLowerCase() : ""}patients in this group were analyzed — too few to draw reliable conclusions. Expand data collection before acting on these findings.`;
+      return `Only ${n} ${attr ? attr.toLowerCase() + " " : ""}patients in this group were analyzed — too few to draw reliable conclusions. Expand data collection before acting on these findings.`;
     if (n < 30)
       return `${n} ${attr ? attr.toLowerCase() + " " : ""}patients analyzed. Results are directionally useful but should be verified against a larger sample before clinical decisions are made.`;
     return `${n} ${attr ? attr.toLowerCase() + " " : ""}patients analyzed — sufficient volume to draw reliable conclusions for this group.`;
   }
 
   if (dim.includes("Intersectionality")) {
-    const example = attr ? `(e.g. older ${attr.toLowerCase()} patients)` : "(e.g. patients who are both elderly and from a specific racial group)";
+    // subgroup looks like "gender=Male|race=Black" — parse into readable label
+    const parsedGroups = (alert.subgroup ?? "")
+      .split("|")
+      .map((p) => p.split("=")[1] ?? p)
+      .filter(Boolean);
+    const groupLabel = parsedGroups.length > 0
+      ? parsedGroups.join(" + ") + " patients"
+      : "patients in overlapping groups";
+
     if (sev === "RED")
-      return `Patients who fall into two overlapping risk categories ${example} are significantly less likely to be ${outcome}. This compound disparity requires immediate escalation.${compNote ? ` Review under ${compNote}.` : ""}`;
+      return `${cap(groupLabel)} face a compounded disadvantage — this combination of characteristics puts them at significantly higher risk of being missed for ${outcome}. Requires immediate escalation.${compNote ? ` Review under ${compNote}.` : ""}`;
     if (sev === "YELLOW")
-      return `A gap was found for patients in overlapping groups ${example}. Investigate whether care delivery differs for this combined subgroup.`;
-    return `No meaningful disparity found when looking at patients across overlapping groups.`;
+      return `A gap was detected for ${groupLabel}. Investigate whether care delivery differs for patients who fall into both of these groups simultaneously.`;
+    return `No meaningful disparity found for ${groupLabel}.`;
   }
 
   if (dim === "Fairness Drift") {
@@ -207,6 +262,56 @@ export function riskContext(
     if (slope < -0.005)
       return `The outcome gap between patient groups has been narrowing over time — a positive trend. Continue monitoring to confirm improvement.`;
     return `The outcome gap between patient groups has remained steady over time. No drift detected.`;
+  }
+
+  if (dim === "Algorithmic Drift (PELT)") {
+    if (v === null) return "Model performance drift could not be measured in this window.";
+    const drop = Math.abs(Number(v) * 100);
+    if (drop >= 10)
+      return `Overall model performance has dropped by ${drop.toFixed(1)}% from baseline with structural changepoints detected over time. Immediate model review and recalibration are recommended.${compNote ? ` Review under ${compNote}.` : ""}`;
+    if (drop >= 5)
+      return `Overall model performance has dropped by ${drop.toFixed(1)}% from baseline. Monitor closely and investigate recent workflow or population changes.`;
+    return `Overall model performance remains close to baseline with no material algorithmic degradation.`;
+  }
+
+  if (dim === "Threshold Parity") {
+    if (v === null) return `Could not measure decision-rate parity for ${groupDesc}.`;
+    const pct = Math.abs(Number(v) * 100);
+    if (pct >= 20)
+      return `${cap(groupDesc)} are being flagged for ${outcome} at rates that differ by ${pct.toFixed(1)}% versus other groups. This indicates material action-allocation disparity and requires immediate review.`;
+    if (pct >= 10)
+      return `${cap(groupDesc)} show a ${pct.toFixed(1)}% difference in how often they are flagged for ${outcome}. Validate whether this is clinically justified by underlying risk.`;
+    return `Flagging rates are broadly consistent across groups for this decision threshold.`;
+  }
+
+  if (dim === "False Negative Gap") {
+    if (v === null) return `Could not estimate miss-rate parity for ${groupDesc}.`;
+    const pct = Math.abs(Number(v) * 100);
+    if (pct >= 20)
+      return `${cap(groupDesc)} have a ${pct.toFixed(1)}% higher miss-rate for patients who should be ${outcome}. This is a high-risk patient safety concern requiring immediate escalation.${compNote ? ` Review under ${compNote}.` : ""}`;
+    if (pct >= 10)
+      return `${cap(groupDesc)} have a ${pct.toFixed(1)}% higher miss-rate for patients requiring ${outcome}. Investigate thresholding and subgroup model behavior.`;
+    return `Miss-rates are similar across groups in this audit window.`;
+  }
+
+  if (dim === "Calibration Fairness") {
+    if (v === null) return `Could not estimate calibration parity for ${groupDesc}.`;
+    const pct = Math.abs(Number(v) * 100);
+    if (pct >= 10)
+      return `Risk scores are miscalibrated across groups by ${pct.toFixed(1)}%, meaning identical scores can imply different real-world risk. Recalibration is strongly recommended before operational use.`;
+    if (pct >= 5)
+      return `A ${pct.toFixed(1)}% calibration gap is present across groups. Monitor and recalibrate if this pattern persists.`;
+    return `Predicted risk scores are similarly calibrated across groups.`;
+  }
+
+  if (dim === "Feature Drift") {
+    if (v === null) return "Input feature distribution shift could not be computed for this variable.";
+    const ks = Number(v);
+    if (ks >= 0.20)
+      return `Input data patterns have shifted substantially, which can destabilize fairness and model validity. Investigate population or workflow changes immediately.`;
+    if (ks >= 0.10)
+      return `Input data patterns are drifting. Continue close monitoring and assess whether retraining is needed.`;
+    return `Input data distribution remains stable relative to baseline.`;
   }
 
   return "";

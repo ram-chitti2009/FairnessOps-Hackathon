@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from SDK import AuditConfig, run_audit
@@ -18,6 +19,14 @@ from api.routes.stream import router as stream_router
 
 cfg = ApiConfig.from_env()
 app = FastAPI(title=cfg.title, version=cfg.version)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 DEFAULT_OUTPUT_ROOT = "runs/sdk_api_outputs"
 

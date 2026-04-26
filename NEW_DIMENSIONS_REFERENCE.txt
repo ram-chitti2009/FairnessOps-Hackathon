@@ -1,0 +1,368 @@
+FairnessOps - Advanced Dimensions Reference
+===========================================
+
+Purpose
+-------
+This document defines 4 additional fairness dimensions that can be added to the
+current FairnessOps worker pipeline.
+
+Current production dimensions already implemented:
+  1) Demographic Fairness
+  2) Representation
+  3) Intersectionality (2-way)
+  4) Fairness Drift
+
+New advanced dimensions in this document:
+  A) Threshold Parity Gap
+  B) False Negative Rate (FNR) Gap
+  C) Feature Drift (KS + PSI)
+  D) Calibration Gap by Group
+
+Design goal:
+Use the same storage contract as existing dimensions:
+  - fairness_metrics table for metric rows
+  - metric_alerts table for alert rows
+so the dashboard can render outputs without major UI rewrites.
+
+----------------------------------------------------------------------
+A) Threshold Parity Gap
+----------------------------------------------------------------------
+
+What it measures
+----------------
+Whether different demographic groups are being flagged positive at materially
+different rates at the model's operating threshold.
+
+Clinical interpretation:
+If one group is systematically flagged less often, that group may be under-triaged
+for interventions.
+
+Inputs
+------
+- y_pred_proba: model risk scores in [0, 1]
+- protected attributes (e.g., race, gender, age_group, region)
+- decision threshold t (e.g., 0.40 or 0.50)
+
+Formulas
+--------
+Binary prediction:
+  y_hat_i(t) = 1 if y_pred_proba_i >= t else 0
+
+Group positive prediction rate for group g:
+  PPR_g(t) = (1 / N_g) * SUM_{i in g} y_hat_i(t)
+
+Parity gap for a protected attribute A with groups g in G_A:
+  Gap_A(t) = max_{g in G_A}(PPR_g(t)) - min_{g in G_A}(PPR_g(t))
+
+Severity thresholds (suggested)
+-------------------------------
+- GREEN:  Gap < 0.10
+- YELLOW: 0.10 <= Gap < 0.20
+- RED:    Gap >= 0.20
+
+Worked example
+--------------
+Threshold t = 0.40
+
+Gender groups:
+  PPR_male   = 0.31
+  PPR_female = 0.12
+
+Gap_gender = 0.31 - 0.12 = 0.19 -> YELLOW
+
+Storage mapping
+---------------
+Dimension name:
+  "Threshold Parity"
+
+fairness_metrics examples:
+  metric_name="positive_rate_at_threshold", metric_value=PPR_g
+  metric_name="parity_gap", metric_value=Gap_A
+
+metric_alerts signal_value:
+  signal_value = Gap_A
+
+Notes
+-----
+- This metric does NOT require y_true labels.
+- It is sensitive to threshold choice; keep threshold explicit in metadata.
+
+----------------------------------------------------------------------
+B) False Negative Rate (FNR) Gap
+----------------------------------------------------------------------
+
+What it measures
+----------------
+Whether some groups have systematically higher miss rates (false negatives).
+
+Clinical interpretation:
+In triage use-cases, high FNR means "patients who should have been flagged were
+missed." This is often the highest-risk fairness failure mode.
+
+Inputs
+------
+- y_true (binary ground truth)
+- y_pred_proba
+- protected attributes
+- threshold t
+
+Formulas
+--------
+Binary prediction:
+  y_hat_i(t) = 1 if y_pred_proba_i >= t else 0
+
+For group g:
+  FN_g = count(i in g where y_true_i = 1 and y_hat_i = 0)
+  TP_g = count(i in g where y_true_i = 1 and y_hat_i = 1)
+
+False Negative Rate:
+  FNR_g = FN_g / (FN_g + TP_g)
+
+FNR gap for attribute A:
+  FNR_Gap_A = max_{g in G_A}(FNR_g) - min_{g in G_A}(FNR_g)
+
+Severity thresholds (suggested)
+-------------------------------
+- GREEN:  Gap < 0.10
+- YELLOW: 0.10 <= Gap < 0.20
+- RED:    Gap >= 0.20
+
+Worked example
+--------------
+At t = 0.40:
+  FNR_white = 0.11
+  FNR_black = 0.36
+
+FNR_Gap_race = 0.36 - 0.11 = 0.25 -> RED
+
+Storage mapping
+---------------
+Dimension name:
+  "False Negative Gap"
+
+fairness_metrics examples:
+  metric_name="fnr", metric_value=FNR_g
+  metric_name="fnr_gap", metric_value=FNR_Gap_A
+
+metric_alerts signal_value:
+  signal_value = FNR_Gap_A
+
+Notes
+-----
+- Require sufficient positives per group before computing FNR:
+    n_pos_g = FN_g + TP_g >= min_pos (e.g., 20)
+- For underpowered groups, write representation-style low-confidence metadata.
+
+----------------------------------------------------------------------
+C) Feature Drift (KS + PSI)
+----------------------------------------------------------------------
+
+What it measures
+----------------
+Whether input feature distributions shifted from baseline/reference to current window.
+
+Clinical interpretation:
+Population shifted (new patient mix, protocol changes, unit transfer patterns).
+Model fairness/performance may degrade even if code is unchanged.
+
+Inputs
+------
+- Numeric features over two windows:
+    reference window R
+    current window C
+
+Formulas - KS
+-------------
+Let F_R(x) and F_C(x) be empirical CDFs for a feature.
+
+Kolmogorov-Smirnov statistic:
+  KS = sup_x |F_R(x) - F_C(x)|
+
+KS p-value from two-sample KS test.
+
+Common alert rule:
+  Alert if KS > threshold AND p-value < alpha
+
+Formulas - PSI (Population Stability Index)
+-------------------------------------------
+1) Bin feature into K bins (e.g., deciles based on reference).
+2) For each bin k:
+   p_k = proportion in reference
+   q_k = proportion in current
+
+PSI:
+  PSI = SUM_{k=1..K} (q_k - p_k) * ln(q_k / p_k)
+
+Use epsilon for zero-safe calculation:
+  p_k <- max(p_k, eps), q_k <- max(q_k, eps)
+
+Severity thresholds (suggested)
+-------------------------------
+KS-based:
+  - YELLOW: KS > 0.10 and p < 0.05
+  - RED:    KS > 0.20 and p < 0.01
+
+PSI-based:
+  - GREEN:  PSI < 0.10
+  - YELLOW: 0.10 <= PSI < 0.25
+  - RED:    PSI >= 0.25
+
+Worked example
+--------------
+Feature: lactate
+  KS = 0.23, p = 0.002
+  PSI = 0.29
+
+Result: RED feature drift alert
+
+Storage mapping
+---------------
+Dimension name:
+  "Feature Drift"
+
+fairness_metrics examples:
+  metric_name="ks_stat", metric_value=KS
+  metric_name="ks_pvalue", metric_value=p
+  metric_name="psi", metric_value=PSI
+
+metric_alerts signal_value:
+  choose one primary signal:
+    signal_value = KS (recommended)
+  and keep PSI in threshold_config or metadata.
+
+Notes
+-----
+- Drift is not automatically unfairness, but a strong leading indicator.
+- Monitor drift by subgroup if you want "drift fairness" (optional extension).
+
+----------------------------------------------------------------------
+D) Calibration Gap by Group
+----------------------------------------------------------------------
+
+What it measures
+----------------
+Whether predicted probabilities mean the same thing across groups.
+
+Clinical interpretation:
+If one group's risk scores are over- or under-confident, triage decisions based
+on those scores are inequitable even when AUC is similar.
+
+Inputs
+------
+- y_true
+- y_pred_proba
+- protected attributes
+
+Simple calibration error formula
+--------------------------------
+For group g:
+  mean_pred_g = mean(y_pred_proba_i for i in g)
+  obs_rate_g  = mean(y_true_i for i in g)
+  cal_error_g = |mean_pred_g - obs_rate_g|
+
+Calibration gap for attribute A:
+  Cal_Gap_A = max_{g in G_A}(cal_error_g) - min_{g in G_A}(cal_error_g)
+
+Alternative (optional stronger metric):
+  ECE_g (Expected Calibration Error) via probability bins.
+
+Severity thresholds (suggested)
+-------------------------------
+- GREEN:  Gap < 0.05
+- YELLOW: 0.05 <= Gap < 0.10
+- RED:    Gap >= 0.10
+
+Worked example
+--------------
+For race groups:
+  cal_error_white = |0.28 - 0.26| = 0.02
+  cal_error_black = |0.31 - 0.18| = 0.13
+
+Cal_Gap_race = 0.13 - 0.02 = 0.11 -> RED
+
+Storage mapping
+---------------
+Dimension name:
+  "Calibration Fairness"
+
+fairness_metrics examples:
+  metric_name="calibration_error", metric_value=cal_error_g
+  metric_name="calibration_gap", metric_value=Cal_Gap_A
+
+metric_alerts signal_value:
+  signal_value = Cal_Gap_A
+
+Notes
+-----
+- Calibration can drift over time; combine with Fairness Drift for early warning.
+- Requires enough samples per group for stable estimates.
+
+----------------------------------------------------------------------
+Implementation Contract for Current FairnessOps Stack
+----------------------------------------------------------------------
+
+Each new dimension should output two artifacts:
+
+1) Metric dataframe rows -> persisted to fairness_metrics
+   Required columns:
+     run_id, dimension, attribute, subgroup, metric_name, metric_value, metadata
+
+2) Alert dataframe rows -> persisted to metric_alerts
+   Required columns:
+     run_id, dimension, attribute, subgroup, severity, message, signal_value, threshold_config
+
+Recommended compute function signatures
+---------------------------------------
+For each new module in SDK/workers/compute:
+
+  def compute_threshold_parity_outputs(df: pd.DataFrame, cfg: WorkerConfig) -> pd.DataFrame
+  def compute_fnr_gap_outputs(df: pd.DataFrame, cfg: WorkerConfig) -> pd.DataFrame
+  def compute_feature_drift_outputs(df: pd.DataFrame, cfg: WorkerConfig) -> pd.DataFrame
+  def compute_calibration_gap_outputs(df: pd.DataFrame, cfg: WorkerConfig) -> pd.DataFrame
+
+Then wire in run_worker.py and persist.py using same pattern as existing dimensions.
+
+----------------------------------------------------------------------
+Thresholds Summary (default suggestions)
+----------------------------------------------------------------------
+
+Threshold Parity Gap:
+  YELLOW >= 0.10
+  RED    >= 0.20
+
+FNR Gap:
+  YELLOW >= 0.10
+  RED    >= 0.20
+
+Feature Drift (KS):
+  YELLOW if KS > 0.10 and p < 0.05
+  RED    if KS > 0.20 and p < 0.01
+
+Feature Drift (PSI):
+  YELLOW >= 0.10
+  RED    >= 0.25
+
+Calibration Gap:
+  YELLOW >= 0.05
+  RED    >= 0.10
+
+----------------------------------------------------------------------
+Validation Checklist for Each New Dimension
+----------------------------------------------------------------------
+
+1) Unit test formula correctness on toy arrays.
+2) Inject known synthetic bias and verify alert severity.
+3) Ensure low-sample groups are flagged as low-confidence/suppressed.
+4) Confirm metrics/alerts rows land in Supabase tables.
+5) Confirm dashboard shows alerts in Alert Triage + Live Feed.
+
+----------------------------------------------------------------------
+Pitch-Safe Explanation (for judges)
+----------------------------------------------------------------------
+
+"Our core engine currently runs 4 production fairness checks continuously.
+These 4 advanced dimensions extend coverage from performance disparity to
+decision parity, safety miss-rates, data drift, and probability calibration.
+Together they move us from 'is it accurate?' to 'is it clinically safe and
+equitable over time for every patient subgroup?'"
+

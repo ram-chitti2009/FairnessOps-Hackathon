@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -15,3 +15,4 @@ class AuditLatestResponse(BaseModel):
     metric_count: int
     alert_count: int
     dimensions: List[str]
+    metadata: Optional[Dict[str, Any]] = None

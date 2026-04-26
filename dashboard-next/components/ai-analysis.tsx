@@ -16,7 +16,7 @@ export function AIAnalysis({ text, error, loading }: Props) {
         <div className="flex items-center gap-2 mb-4">
           <Zap className="h-4 w-4 text-purple-400" />
           <span className="text-xs font-semibold uppercase tracking-widest text-purple-400">
-            AI Audit Analysis
+            AI Clinical Briefing
           </span>
           <span className="ml-auto text-[10px] text-text-muted font-mono">GPT-4o-mini</span>
         </div>
@@ -46,7 +46,7 @@ export function AIAnalysis({ text, error, loading }: Props) {
               {actions.length > 0 && (
                 <div className="space-y-2.5 border-t border-[#1a0a3e] pt-4">
                   <p className="text-xs font-semibold uppercase tracking-widest text-text-muted mb-3">
-                    Recommended Actions
+                    Suggested care-ops actions
                   </p>
                   {actions.map((a, i) => (
                     <div key={i} className="flex gap-3">

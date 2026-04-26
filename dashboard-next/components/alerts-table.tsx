@@ -9,7 +9,6 @@ import { estimateImpact } from "@/lib/registry";
 
 interface Props { alerts: AlertRow[]; ctx: ModelContext; windowSize?: number }
 
-const DIMS = ["All", "Demographic Fairness", "Representation", "Intersectionality (2-way)", "Fairness Drift"];
 const SEVS = ["All", "RED", "YELLOW", "GREEN", "INSUFFICIENT_DATA"];
 
 export function AlertsTable({ alerts, ctx, windowSize }: Props) {
@@ -17,6 +16,7 @@ export function AlertsTable({ alerts, ctx, windowSize }: Props) {
   const [sevFilter, setSevFilter] = useState("All");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 12;
+  const dims = ["All", ...Array.from(new Set(alerts.map((a) => a.dimension))).sort()];
 
   const sorted = [...alerts].sort(
     (a, b) => SEV_RANK[b.severity?.toUpperCase() ?? ""] - SEV_RANK[a.severity?.toUpperCase() ?? ""],
@@ -35,19 +35,19 @@ export function AlertsTable({ alerts, ctx, windowSize }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle>Alert Triage</CardTitle>
+          <CardTitle>Clinical finding triage</CardTitle>
           <div className="flex gap-2 flex-wrap">
-            <Select label="Dimension" value={dimFilter} options={DIMS} onChange={(v) => { setDimFilter(v); setPage(0); }} />
+            <Select label="Dimension" value={dimFilter} options={dims} onChange={(v) => { setDimFilter(v); setPage(0); }} />
             <Select label="Severity" value={sevFilter} options={SEVS} onChange={(v) => { setSevFilter(v); setPage(0); }} />
           </div>
-          <span className="text-xs text-text-muted ml-auto">{filtered.length} results</span>
+          <span className="text-xs text-text-muted ml-auto">{filtered.length} findings</span>
         </div>
       </CardHeader>
       <CardContent className="pt-0 px-0 pb-0">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border">
-              {["Severity", "Dimension", "Attribute / Group", "Signal", "Clinical Interpretation"].map((h) => (
+              {["Priority", "Safety check", "Patient group", "What changed", "Clinical meaning"].map((h) => (
                 <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-widest text-text-muted">
                   {h}
                 </th>
@@ -57,7 +57,9 @@ export function AlertsTable({ alerts, ctx, windowSize }: Props) {
           <tbody>
             {paged.map((a, i) => {
               const context = riskContext(a, ctx);
-              const impact  = a.severity === "RED" ? estimateImpact(windowSize, a.signal_value) : null;
+              const impact  = a.severity === "RED"
+                ? estimateImpact(windowSize, a.signal_value, a.dimension)
+                : null;
               const isCrit  = a.severity === "RED";
               return (
               <tr key={i} className={`border-b border-border/50 hover:bg-muted/20 transition-colors ${isCrit ? "bg-critical/5" : ""}`}>

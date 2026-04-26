@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from fastapi import APIRouter, HTTPException, Query
 
 from api.config import ApiConfig
@@ -8,6 +10,13 @@ from api.services.supabase_read import SupabaseReadService
 
 
 router = APIRouter(prefix="/audit", tags=["audit"])
+
+
+@router.get("/models", response_model=List[str])
+def list_models() -> List[str]:
+    """Return all distinct model names that have at least one audit run."""
+    service = SupabaseReadService()
+    return service.list_models()
 
 
 @router.get("/latest", response_model=AuditLatestResponse)
@@ -31,4 +40,5 @@ def get_latest_audit(model_name: str = Query(..., min_length=1)) -> AuditLatestR
         metric_count=len(metrics),
         alert_count=len(alerts),
         dimensions=dimensions,
+        metadata=latest.get("metadata"),
     )

@@ -37,7 +37,7 @@ def insert_audit_run(client: Any, s_cfg: SupabaseConfig, cfg: WorkerConfig, df: 
     now = datetime.now(timezone.utc).isoformat()
     start = str(df["created_at"].iloc[0]) if not df.empty else now
     end = str(df["created_at"].iloc[-1]) if not df.empty else now
-    payload = {
+    payload: Dict[str, Any] = {
         "created_at": now,
         "model_name": cfg.model_name,
         "window_start": start,
@@ -47,7 +47,24 @@ def insert_audit_run(client: Any, s_cfg: SupabaseConfig, cfg: WorkerConfig, df: 
         "pipeline_version": cfg.pipeline_version,
         "status": "completed",
     }
-    res = client.schema(s_cfg.schema).table("audit_runs").insert(payload).execute()
+
+    # Embed clinical context so the dashboard can read it without a hardcoded registry.
+    # Stored under a "clinical" key to avoid collision with other metadata.
+    # Always present — WorkerConfig.clinical_context defaults to generic labels.
+    payload["metadata"] = {"clinical": cfg.clinical_context}
+
+    try:
+        res = client.schema(s_cfg.schema).table("audit_runs").insert(payload).execute()
+    except Exception as exc:
+        # Only retry without metadata if the error message suggests an unknown column.
+        # Re-raise everything else so real DB/auth failures aren't silently swallowed.
+        err_str = str(exc).lower()
+        if "metadata" in err_str or "column" in err_str or "unknown" in err_str:
+            payload.pop("metadata", None)
+            res = client.schema(s_cfg.schema).table("audit_runs").insert(payload).execute()
+        else:
+            raise
+
     data = list(res.data or [])
     if not data or "run_id" not in data[0]:
         raise RuntimeError("Failed to create audit_runs row with run_id.")

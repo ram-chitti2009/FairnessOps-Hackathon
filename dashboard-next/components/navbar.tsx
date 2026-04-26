@@ -1,19 +1,29 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Activity, ChevronDown, LayoutGrid } from "lucide-react";
+import { RefreshCw, Activity, ChevronDown, LayoutGrid, Wifi, WifiOff } from "lucide-react";
 import type { ModelContext } from "@/lib/registry";
 
 interface Props {
   modelName: string;
   models: string[];
   ctx: ModelContext;
+  realtimeStatus: "connecting" | "live" | "error";
   lastFetched: Date;
   loading: boolean;
   onRefresh: () => void;
   onModelChange: (model: string) => void;
 }
 
-export function Navbar({ modelName, models, ctx, lastFetched, loading, onRefresh, onModelChange }: Props) {
+export function Navbar({
+  modelName,
+  models,
+  ctx,
+  realtimeStatus,
+  lastFetched,
+  loading,
+  onRefresh,
+  onModelChange,
+}: Props) {
   const [timeStr, setTimeStr]   = useState("");
   const [open, setOpen]         = useState(false);
   const dropdownRef             = useRef<HTMLDivElement>(null);
@@ -39,6 +49,12 @@ export function Navbar({ modelName, models, ctx, lastFetched, loading, onRefresh
   function displayName(name: string) {
     return name.replace(/_\d{14,}$/, "").replace(/_/g, " ");
   }
+
+  const rt = {
+    live: { label: "Live updates active", color: "text-green-400", Icon: Wifi },
+    connecting: { label: "Connecting live updates", color: "text-amber-400", Icon: Wifi },
+    error: { label: "Live updates offline", color: "text-red-400", Icon: WifiOff },
+  }[realtimeStatus];
 
   return (
     <header className="sticky top-0 z-40 flex items-center h-14 px-6 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -100,6 +116,10 @@ export function Navbar({ modelName, models, ctx, lastFetched, loading, onRefresh
 
       {/* ── Right side ── */}
       <div className="ml-auto flex items-center gap-4 flex-shrink-0">
+        <div className={`hidden lg:flex items-center gap-1.5 text-[11px] ${rt.color}`}>
+          <rt.Icon className="h-3.5 w-3.5" />
+          <span>{rt.label}</span>
+        </div>
         {timeStr && (
           <span className="text-xs text-text-muted hidden sm:block">Updated {timeStr}</span>
         )}

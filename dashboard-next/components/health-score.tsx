@@ -19,16 +19,21 @@ export function HealthScoreCard({ audit, alerts, lastFetched, ctx }: Props) {
   const red    = alerts.filter((a) => a.severity === "RED").length;
   const yellow = alerts.filter((a) => a.severity === "YELLOW").length;
 
-  // Worst signal for impact estimate
-  const worstRed = alerts.filter((a) => a.severity === "RED")[0];
-  const impact   = worstRed ? estimateImpact(audit.window_size, worstRed.signal_value) : null;
+  // Worst signal for impact estimate — skip Intersectionality alerts since their
+  // signal_value is a priority score (gap × √n_eff), not a 0-1 gap fraction.
+  const worstRed = alerts.filter(
+    (a) => a.severity === "RED",
+  )[0];
+  const impact = worstRed
+    ? estimateImpact(audit.window_size, worstRed.signal_value, worstRed.dimension)
+    : null;
 
   const stats = [
-    { label: "Critical Findings",      value: red,                              color: "#ef4444" },
-    { label: "Needs Review",           value: yellow,                           color: "#f59e0b" },
-    { label: "Total Findings",         value: audit.alert_count,                color: "#e8f0fe" },
-    { label: "Checks Run",             value: audit.metric_count,               color: "#3b82f6" },
-    { label: "Patient Records Scored", value: audit.window_size.toLocaleString(), color: "#8b5cf6" },
+    { label: "Immediate Review", value: red, color: "#ef4444" },
+    { label: "Monitor Closely", value: yellow, color: "#f59e0b" },
+    { label: "Findings This Run", value: audit.alert_count, color: "#e8f0fe" },
+    { label: "Safety Signals Checked", value: audit.metric_count, color: "#3b82f6" },
+    { label: "Patients Reviewed", value: (audit.window_size ?? 0).toLocaleString(), color: "#8b5cf6" },
   ];
 
   return (
@@ -60,7 +65,7 @@ export function HealthScoreCard({ audit, alerts, lastFetched, ctx }: Props) {
           {/* Score */}
           <div className="flex-shrink-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-text-secondary mb-2">
-              Fairness Health Index
+              Clinical Fairness Status
             </p>
             <div className="flex items-end gap-3">
               <span className="text-7xl font-black leading-none" style={{ color }}>
@@ -71,12 +76,12 @@ export function HealthScoreCard({ audit, alerts, lastFetched, ctx }: Props) {
                   className="inline-block px-2.5 py-0.5 rounded text-sm font-bold"
                   style={{ color, background: `${color}18`, border: `1px solid ${color}44` }}
                 >
-                  Grade {grade}
+                  Status {grade}
                 </span>
               </div>
             </div>
             <p className="text-xs text-text-muted mt-2">
-              {audit.dimensions.length} dimensions checked · {lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} UTC
+              {audit.dimensions.length} fairness checks active · {lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} UTC
             </p>
           </div>
 

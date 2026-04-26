@@ -17,16 +17,16 @@ export function LiveAlertFeed({ alerts, realtimeStatus, ctx }: Props) {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   const statusConfig = {
-    live:       { color: "#22c55e", label: "Realtime connected", Icon: Wifi },
+    live:       { color: "#22c55e", label: "Live updates active", Icon: Wifi },
     connecting: { color: "#f59e0b", label: "Connecting…",        Icon: Wifi },
-    error:      { color: "#ef4444", label: "Disconnected",       Icon: WifiOff },
+    error:      { color: "#ef4444", label: "Live updates offline",       Icon: WifiOff },
   }[realtimeStatus];
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <CardTitle>Live Alert Feed</CardTitle>
+          <CardTitle>Live clinical finding feed</CardTitle>
           <div className="flex items-center gap-1.5 ml-auto">
             <span
               className={`h-2 w-2 rounded-full ${realtimeStatus === "live" ? "animate-pulse" : ""}`}
@@ -37,13 +37,13 @@ export function LiveAlertFeed({ alerts, realtimeStatus, ctx }: Props) {
           </div>
         </div>
         <p className="text-xs text-text-muted mt-1">
-          Pushed via Supabase Realtime — updates the moment a worker run completes.
+          Updates as soon as each worker run finishes.
         </p>
       </CardHeader>
       <CardContent className="pt-0">
         {alerts.length === 0 ? (
           <p className="text-sm text-text-muted py-8 text-center">
-            No live alerts yet. Alerts will appear here the instant a new worker run writes to the database.
+            No new findings yet. New results will appear automatically after the next run.
           </p>
         ) : (
           <div className="space-y-1.5 max-h-[420px] overflow-y-auto pr-1">

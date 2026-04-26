@@ -97,6 +97,7 @@ function DashboardInner() {
     setError(null);
     setCtx(getModelContext(name));
     lastRunId.current = null;
+    setRtStatus("connecting");
   }, [router]);
 
   // ── Full data refresh ─────────────────────────────────────────────────────
@@ -107,10 +108,13 @@ function DashboardInner() {
       const [a, al, me] = await Promise.all([
         fetchAuditLatest(modelName),
         fetchAlertsLatest(modelName, 300),
-        fetchMetricsLatest(modelName, 300),
+        fetchMetricsLatest(modelName, 1000),
       ]);
       setAudit(a);
       setAlerts(al);
+      // Seed live feed from latest run so the tab is never empty after refresh
+      // or when realtime inserts arrive before run_id sync completes.
+      setLiveAlerts(al.slice(0, 50));
       setMetrics(me);
       setLastFetched(new Date());
       const freshCtx = getModelContext(modelName, a.metadata);
@@ -142,6 +146,8 @@ function DashboardInner() {
     },
     onNewAlert: (alert) => {
       setRtStatus("live");
+      // Guard against cross-model/cross-run inserts when multiple workers are active.
+      if (!lastRunId.current || alert.run_id !== lastRunId.current) return;
       setLiveAlerts((prev) => [alert, ...prev].slice(0, 50));
     },
   });
@@ -153,10 +159,10 @@ function DashboardInner() {
 
   const tabs = [
     { id: "overview",  label: "Overview" },
-    { id: "alerts",    label: "Alert Triage" },
-    { id: "metrics",   label: "Metrics" },
-    { id: "drift",     label: "Fairness Drift" },
-    { id: "live",      label: "Live Feed" },
+    { id: "alerts",    label: "Clinical Findings" },
+    { id: "metrics",   label: "Detailed Review" },
+    { id: "drift",     label: "Trend Monitoring" },
+    { id: "live",      label: "Live Updates" },
   ] as const;
 
   return (
@@ -165,6 +171,7 @@ function DashboardInner() {
         modelName={modelName}
         models={models}
         ctx={ctx}
+        realtimeStatus={rtStatus}
         lastFetched={lastFetched}
         loading={loading}
         onRefresh={loadData}

@@ -15,7 +15,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="bg-surface border border-border rounded-lg px-3 py-2 text-xs">
       <p className="text-text-secondary mb-0.5">{label}</p>
-      <p className="text-text-primary font-semibold">{payload[0].value} alerts</p>
+      <p className="text-text-primary font-semibold">{payload[0].value} findings</p>
     </div>
   );
 };
@@ -42,7 +42,7 @@ export function AlertCharts({ alerts }: Props) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
-        <CardHeader><CardTitle>Alerts by Severity</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Urgency mix across findings</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={sevData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>
@@ -60,7 +60,7 @@ export function AlertCharts({ alerts }: Props) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Alerts by Dimension</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Where care-equity risks are concentrated</CardTitle></CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={dimData} layout="vertical" margin={{ left: 0, right: 16, top: 0, bottom: 0 }}>

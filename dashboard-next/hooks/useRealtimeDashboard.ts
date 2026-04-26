@@ -26,9 +26,14 @@ export function useRealtimeDashboard({ modelName, onNewRun, onNewAlert }: Option
   onNewAlertRef.current = onNewAlert;
 
   useEffect(() => {
+    // Channel names include modelName so switching models creates fresh channels
+    // rather than reusing a stale-named channel that Supabase may not fully flush.
+    const runChanName   = `rt:audit_runs:${modelName}`;
+    const alertChanName = `rt:metric_alerts:${modelName}`;
+
     // ── Channel 1: audit_runs ────────────────────────────────────────────
     const runChannel = supabase
-      .channel("rt:audit_runs")
+      .channel(runChanName)
       .on(
         "postgres_changes",
         {
@@ -47,7 +52,7 @@ export function useRealtimeDashboard({ modelName, onNewRun, onNewAlert }: Option
     // We can't filter by model_name directly (it's on audit_runs, not alerts)
     // so we receive all inserts and discard non-matching ones client-side.
     const alertChannel = supabase
-      .channel("rt:metric_alerts")
+      .channel(alertChanName)
       .on(
         "postgres_changes",
         {

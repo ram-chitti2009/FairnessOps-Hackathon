@@ -128,9 +128,26 @@ export function getModelContext(
 export function estimateImpact(
   windowSize: number | null | undefined,
   signalValue: number | null,
+  dimension?: string,
 ): string | null {
-  if (!signalValue || !windowSize || windowSize < 1) return null;
-  const missed = Math.round(Math.abs(signalValue) * windowSize);
+  if (signalValue === null || signalValue === undefined || !windowSize || windowSize < 1) return null;
+  if (!dimension) return null;
+
+  // Only convert to "patients affected" for dimensions where signal_value is a
+  // gap-like fraction in [0,1]. Other dimensions (e.g. Representation count,
+  // Feature Drift KS statistic, Intersectionality score) should not use this.
+  const impactEligible = new Set([
+    "Demographic Fairness",
+    "Threshold Parity",
+    "False Negative Gap",
+    "Calibration Fairness",
+  ]);
+  if (!impactEligible.has(dimension)) return null;
+
+  const frac = Math.abs(Number(signalValue));
+  if (!Number.isFinite(frac) || frac <= 0) return null;
+  const bounded = Math.min(1, frac);
+  const missed = Math.min(windowSize, Math.round(bounded * windowSize));
   if (missed < 1) return null;
   return `~${missed} of ${windowSize.toLocaleString()} patients`;
 }

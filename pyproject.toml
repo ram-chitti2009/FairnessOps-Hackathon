@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "fairnessops-sdk"
+version = "0.1.0"
+description = "Clinical AI fairness monitoring SDK — decorator, workers, and Supabase persistence."
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "supabase>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+# Run a single fairness worker pass:
+#   fairnessops-worker --model-name my_model --protected-attrs ethnicity gender
+fairnessops-worker = "SDK.workers.run_worker:main"
+
+[tool.setuptools.packages.find]
+# Automatically discovers SDK/ and api/ packages.
+where = ["."]
+include = ["SDK*", "api*"]

@@ -8,12 +8,40 @@ import type { MetricRow } from "@/lib/types";
 
 interface Props { metrics: MetricRow[] }
 
+function friendlyMetricName(name: string): string {
+  const map: Record<string, string> = {
+    max_auc_gap: "largest outcome gap",
+    overall_auc: "overall model performance",
+    n: "patients in group",
+    positive_rate: "care-escalation rate",
+    n_eff: "effective sample size",
+    auc_subgroup: "subgroup model performance",
+    gap_vs_overall: "gap vs overall",
+    score: "priority score",
+    window_gap: "window fairness gap",
+    gap_trend_slope: "trend score",
+    positive_rate_at_threshold: "care-escalation rate at threshold",
+    parity_gap: "care-escalation gap",
+    fnr: "missed-care rate",
+    fnr_gap: "missed-care gap",
+    calibration_error: "risk-score mismatch",
+    calibration_gap: "mismatch gap",
+    ks_stat: "distribution shift score",
+    ks_pvalue: "shift confidence",
+    psi: "stability index",
+    baseline_auc: "baseline model performance",
+    current_auc: "current model performance",
+    auc_drop: "performance drop",
+  };
+  return map[name] ?? name.replace(/_/g, " ");
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   const val = payload[0].value as number;
   return (
     <div className="bg-surface border border-border rounded-lg px-3 py-2 text-xs">
-      <p className="text-text-secondary mb-0.5 font-mono">{label}</p>
+      <p className="text-text-secondary mb-0.5">{label}</p>
       <p className="text-text-primary font-semibold">{val.toFixed(4)}</p>
     </div>
   );
@@ -47,7 +75,7 @@ export function MetricsExplorer({ metrics }: Props) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle>Metrics Explorer</CardTitle>
+          <CardTitle>Detailed clinical monitoring view</CardTitle>
           <div className="flex gap-2">
             <select
               value={dim}
@@ -61,12 +89,15 @@ export function MetricsExplorer({ metrics }: Props) {
               onChange={(e) => setMetricName(e.target.value)}
               className="bg-muted border border-border text-text-secondary text-xs rounded-md px-3 py-1.5 focus:outline-none focus:border-info"
             >
-              {metricNames.map((n) => <option key={n} value={n}>{n}</option>)}
+              {metricNames.map((n) => <option key={n} value={n}>{friendlyMetricName(n)}</option>)}
             </select>
           </div>
         </div>
       </CardHeader>
       <CardContent>
+        <p className="text-xs text-text-muted mb-3">
+          Use this view for deeper review. Values are grouped by patient population for the selected safety check.
+        </p>
         {chartData.length ? (
           <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 28)}>
             <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
@@ -82,7 +113,7 @@ export function MetricsExplorer({ metrics }: Props) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="text-sm text-text-muted py-8 text-center">No numeric values for this selection.</p>
+          <p className="text-sm text-text-muted py-8 text-center">No values available for this selection yet.</p>
         )}
       </CardContent>
     </Card>
