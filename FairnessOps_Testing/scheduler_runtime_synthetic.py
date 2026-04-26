@@ -15,7 +15,7 @@ from sklearn.preprocessing import OneHotEncoder
 from SDK.monitor.decorator import monitor
 from SDK.workers.config import WorkerConfig
 
-from scheduler_config import MODEL_NAME, SYNTH_ROWS, SYNTH_SEED
+from scheduler_config import SYNTH_ROWS, SYNTH_SEED
 
 
 @dataclass
@@ -98,7 +98,7 @@ def _make_synthetic_dataset(rows: int, seed: int) -> pd.DataFrame:
     )
 
 
-def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
+def startup_runtime(log: Callable[[str], None], model_name: str = "synthetic_monitor_v1") -> RuntimeState:
     rows = max(1200, SYNTH_ROWS)
     log(f"FairnessOps scheduler starting up (synthetic mode, rows={rows}, seed={SYNTH_SEED})...")
     df = _make_synthetic_dataset(rows=rows, seed=SYNTH_SEED)
@@ -159,16 +159,16 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
     x_monitor["region"] = monitor_df["region"].astype(str).values
     x_monitor = x_monitor.astype(object).where(pd.notnull(x_monitor), None)
 
-    @monitor(model_name=MODEL_NAME, protected_attrs=protected)
+    @monitor(model_name=model_name, protected_attrs=protected)
     def predict(x_df: pd.DataFrame) -> list[float]:
         # Simulate online drift over time by degrading confidence as batches progress.
         base = clf.predict_proba(x_df[feature_cols])[:, 1]
         return np.clip(base, 1e-4, 1 - 1e-4).tolist()
 
     worker_cfg = WorkerConfig(
-        model_name=MODEL_NAME,
+        model_name=model_name,
         protected_attrs=protected,
-        window_n=5000,
+        window_n=500,
         min_group_n_auc=20,
         inter_min_group_n=10,
         clinical_context={

@@ -16,7 +16,8 @@ router = APIRouter(prefix="/audit", tags=["audit"])
 def list_models() -> List[str]:
     """Return all distinct model names that have at least one audit run."""
     service = SupabaseReadService()
-    return service.list_models()
+    _STALE_PREFIXES = ("monitor_ingest_smoke", "cancer_survival")
+    return [m for m in service.list_models() if not any(m.startswith(p) for p in _STALE_PREFIXES)]
 
 
 @router.get("/latest", response_model=AuditLatestResponse)

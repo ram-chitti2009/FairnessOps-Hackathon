@@ -53,22 +53,28 @@ export function computeHealthScore(alerts: AlertRow[]): {
   color: string;
 } {
   if (!alerts.length) return { score: 100, grade: "Excellent", color: "#22c55e" };
-  // Health index weights are intentionally conservative so low-volume runs
-  // don't collapse to 0 too easily while still reflecting critical risk.
-  const red = alerts.filter((a) => a.severity === "RED").length;
+
+  const red    = alerts.filter((a) => a.severity === "RED").length;
   const yellow = alerts.filter((a) => a.severity === "YELLOW").length;
-  const representationRed = alerts.filter(
+  const repRed = alerts.filter(
     (a) => a.severity === "RED" && a.dimension === "Representation",
   ).length;
-  const harmfulRed = Math.max(0, red - representationRed);
+  // Intersectionality alerts are combinatorial — 15 alerts can stem from the same
+  // 3-4 demographic gaps expressed as 2-way combos. Weight them at 1pt, cap at 12.
+  const interRed = alerts.filter(
+    (a) => a.severity === "RED" && a.dimension.includes("Intersectionality"),
+  ).length;
+  const harmfulRed = Math.max(0, red - repRed - interRed);
+
   const penalty = Math.min(
-    100,
-    harmfulRed * 7 +
-      representationRed * 3 +
-      yellow * 2 +
+    85,
+    Math.min(35, harmfulRed * 7) +
+      Math.min(10, interRed) +
+      Math.min(9, repRed * 3) +
+      Math.min(20, yellow * 2) +
       Math.max(0, Math.floor((alerts.length - 12) / 8)),
   );
-  const score = Math.max(0, 100 - penalty);
+  const score = Math.max(15, 100 - penalty);
   if (score >= 85) return { score, grade: "Excellent", color: "#22c55e" };
   if (score >= 70) return { score, grade: "Good", color: "#86efac" };
   if (score >= 50) return { score, grade: "Review", color: "#f59e0b" };

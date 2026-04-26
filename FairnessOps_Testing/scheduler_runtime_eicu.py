@@ -15,7 +15,7 @@ from sklearn.preprocessing import OneHotEncoder
 from SDK.monitor.decorator import monitor
 from SDK.workers.config import WorkerConfig
 
-from scheduler_config import EICU_DATA_PATH, MODEL_NAME
+from scheduler_config import EICU_DATA_PATH
 
 
 @dataclass
@@ -36,7 +36,7 @@ def _pick_first(df: pd.DataFrame, candidates: list[str]) -> str:
     raise ValueError(f"None of these columns found: {candidates}")
 
 
-def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
+def startup_runtime(log: Callable[[str], None], model_name: str = "eicu_logreg_v1") -> RuntimeState:
     log("FairnessOps scheduler starting up (eICU mode)...")
     if not EICU_DATA_PATH:
         raise ValueError("EICU_DATA_PATH is empty. Set it in .env to a local eICU CSV file.")
@@ -120,7 +120,7 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
         x_raw, y, test_size=0.25, random_state=42, stratify=y if len(set(y)) > 1 else None
     )
     clf.fit(x_train, y_train)
-    log(f"eICU model trained on {len(x_train)} rows. Model name: {MODEL_NAME}")
+    log(f"eICU model trained on {len(x_train)} rows. Model name: {model_name}")
 
     protected = ["gender", "race"]
     x_monitor = x_raw.copy()
@@ -129,14 +129,14 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
     x_monitor["gender"] = df["gender"]
     x_monitor["race"] = df["race"]
 
-    @monitor(model_name=MODEL_NAME, protected_attrs=protected)
+    @monitor(model_name=model_name, protected_attrs=protected)
     def predict(x_df: pd.DataFrame) -> list[float]:
         return clf.predict_proba(x_df[feature_cols])[:, 1].tolist()
 
     worker_cfg = WorkerConfig(
-        model_name=MODEL_NAME,
+        model_name=model_name,
         protected_attrs=protected,
-        window_n=5000,
+        window_n=500,
         min_group_n_auc=20,
         inter_min_group_n=10,
         clinical_context={

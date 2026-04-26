@@ -44,7 +44,7 @@ def main() -> None:
         log(f"[{model_name}] Bootstrapping runtime (mode={mode})...")
 
         startup_runtime = _import_startup(mode)
-        state = startup_runtime(log)
+        state = startup_runtime(log, model_name=model_name)
         notifier = AlertNotifier(model_name=model_name)
 
         t = threading.Thread(

@@ -199,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <UserRound className="h-3.5 w-3.5 text-text-secondary" />
               <span>Role mode: {roleMode}</span>
               <span>·</span>
-              <span>Updated {lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
+              <span suppressHydrationWarning>Updated {lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</span>
               {DEMO_ACCESS_CODE && (
                 <>
                   <span>·</span>

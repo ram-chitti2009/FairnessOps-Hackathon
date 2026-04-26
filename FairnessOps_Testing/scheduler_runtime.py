@@ -12,7 +12,6 @@ from sklearn.preprocessing import OrdinalEncoder
 from SDK.monitor.decorator import monitor
 from SDK.workers.config import WorkerConfig
 
-from scheduler_config import MODEL_NAME
 
 
 @dataclass
@@ -25,7 +24,7 @@ class RuntimeState:
     batch_cursor: int = 0
 
 
-def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
+def startup_runtime(log: Callable[[str], None], model_name: str = "cancer_survival_v1") -> RuntimeState:
     log("FairnessOps scheduler starting up...")
     log("Loading clinical dataset from Kaggle cache...")
 
@@ -64,12 +63,12 @@ def startup_runtime(log: Callable[[str], None]) -> RuntimeState:
     clf.fit(x_train, y_train)
     log(f"Model trained on {len(x_train)} samples.")
 
-    @monitor(model_name=MODEL_NAME, protected_attrs=protected)
+    @monitor(model_name=model_name, protected_attrs=protected)
     def predict(x_df: pd.DataFrame) -> list[float]:
         return clf.predict_proba(x_df[feature_cols].values)[:, 1].tolist()
 
     worker_cfg = WorkerConfig(
-        model_name=MODEL_NAME,
+        model_name=model_name,
         protected_attrs=protected,
         window_n=5000,
         min_group_n_auc=20,
