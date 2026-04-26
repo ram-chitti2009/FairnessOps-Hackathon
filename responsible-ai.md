@@ -6,7 +6,7 @@
 
 ### 1. eICU Collaborative Research Database (Demo v2.0.1)
 
-A de-identified, multi-center ICU dataset from Philips Healthcare and MIT Lab for Computational Physiology. The demo subset is publicly available at [eicu-crd.mit.edu](https://eicu-crd.mit.edu/). The full credentialed version requires a data use agreement.
+A de-identified, multi-center ICU dataset from Philips Healthcare and MIT Lab for Computational Physiology. The demo subset is publicly available. The full credentialed version requires a data use agreement.
 
 **Tables used:** `apachePatientResult`, `lab`, `vitalPeriodic`, `hospital`
 
